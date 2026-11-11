@@ -21,5 +21,5 @@ export declare class Compiled {
 }
 export declare function cacheSolc(version: string): Promise<boolean>;
 export declare function getSemver(code: string): Promise<null | string>;
-export declare function compile(root: string, filename: string): Promise<Compiled>;
+export declare function compile(root: string, filename: string, content?: string): Promise<Compiled>;
 //# sourceMappingURL=solidity.d.ts.map

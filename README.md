@@ -39,6 +39,11 @@ lib.esm/contracts/hello-world.js
 4:19:39 a.m. - Found 0 errors. Watching for file changes.
 ```
 
+A file event whose Solidity content did not actually change (such as a
+no-op save, or the duplicate events many editors emit) is ignored: the
+contract is not recompiled, the generated TypeScript is left untouched
+and the results already on screen are kept.
+
 
 @TODO
 -----
