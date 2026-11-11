@@ -71,9 +71,14 @@ export async function getSemver(code) {
     }
     throw new Error("");
 }
-export async function compile(root, filename) {
+export async function compile(root, filename, content) {
     const sources = {};
-    sources[filename] = { content: fs.readFileSync(join(root, filename)).toString() };
+    // An already-read source can be passed in, so callers caching compilations
+    // can be sure the content they keyed on is the content that was compiled
+    if (content == null) {
+        content = fs.readFileSync(join(root, filename)).toString();
+    }
+    sources[filename] = { content };
     const input = {
         language: "Solidity",
         sources,
