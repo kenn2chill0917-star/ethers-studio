@@ -45,6 +45,21 @@ contract is not recompiled, the generated TypeScript is left untouched
 and the results already on screen are kept.
 
 
+Testing
+-------
+
+Tests use the `node:test` runner built into Node, so there is nothing
+extra to install:
+
+```
+/home/ricmoo/ethers-studio> npm test
+```
+
+That builds the project and then runs the compiled suite from
+`lib.esm/_tests/`. The tests themselves live beside the source, in
+`src.ts/_tests/`, and are picked up by the normal `tsc` build.
+
+
 @TODO
 -----
 
@@ -53,6 +68,8 @@ and the results already on screen are kept.
 - reformat Solidity errors to more closely match TypeScript
 - more CLI (e.g. offer single-shot, non-watch mode)
 - anti-clobber protection
+- `stripBlockComments` does not handle comments spanning multiple lines
+- `getSemver` never matches a real `pragma solidity` line
 
 License
 -------
