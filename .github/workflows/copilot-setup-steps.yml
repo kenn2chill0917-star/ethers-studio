@@ -1,0 +1,37 @@
+# Preinstalls tooling in Copilot cloud agent's ephemeral environment.
+# For more information see:
+# https://docs.github.com/en/copilot/customizing-copilot/customizing-the-development-environment-for-copilot-coding-agent
+
+name: Copilot Setup Steps
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install prerequisites
+        run: sudo apt-get install -y curl
+
+      - name: Configure NodeSource repository
+        run: curl -fsSL https://deb.nodesource.com/setup_26.x | sudo -E bash -
+
+      - name: Install N|Solid runtime
+        run: sudo apt-get install -y nsolid
+
+      - name: Verify N|Solid
+        run: nsolid -v
