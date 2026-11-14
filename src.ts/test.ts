@@ -1,10 +1,10 @@
 import fs from "fs";
-import { createHash } from "crypto";
 import { join, parse, resolve } from "path";
 import { spawn } from "child_process";
 
 import type { ParamType } from "ethers";
 
+import { getCached, isChanged, readSource, setCached, sourceKey, writeIfChanged } from "./cache.js";
 import { compile } from "./solidity.js";
 import type { Compiled, CompiledContract, CompiledError } from "./solidity.js";
 
@@ -113,36 +113,6 @@ function getTime(): string {
     return `${ hours }:${ zpad(minutes, 2) }:${ zpad(seconds, 2) } ${ meridian }`;
 }
 
-// What was compiled: the content of each source, keyed by its filename. A watcher
-// event for an unchanged source (editors emit several events per save, and a save
-// can be a no-op) reuses the cached result instead of recompiling and clobbering
-// the results that are currently on screen.
-const compiledSources: Map<string, { key: string, compiled: Compiled }> = new Map();
-
-function sourceKey(content: string): string {
-    return createHash("sha256").update(content).digest("hex");
-}
-
-function readSource(inPath: string, filename: string): null | string {
-    try {
-        return fs.readFileSync(join(inPath, filename)).toString();
-    } catch (error) {
-        // The file was removed or renamed; forget it and let the caller skip it
-        if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-            compiledSources.delete(filename);
-            return null;
-        }
-        throw error;
-    }
-}
-
-function isChanged(inPath: string, filename: string): boolean {
-    const content = readSource(inPath, filename);
-    if (content == null) { return false; }
-    const cached = compiledSources.get(filename);
-    return (cached == null || cached.key !== sourceKey(content));
-}
-
 async function updateDotSol(root: string, config: any, filename: string): Promise<null | Compiled> {
     const inPath = join(root, config.dirs.contracts);
 
@@ -150,11 +120,11 @@ async function updateDotSol(root: string, config: any, filename: string): Promis
     if (content == null) { return null; }
 
     const key = sourceKey(content);
-    const cached = compiledSources.get(filename);
+    const cached = getCached(filename);
     if (cached != null && cached.key === key) { return cached.compiled; }
 
     const compiled = await compile(inPath, filename, content);
-    compiledSources.set(filename, { key, compiled });
+    setCached(filename, key, compiled);
 
     for (const contract of compiled.contracts) {
         const ts = `import { ethers } from "ethers";\n\n` + generateTypeScript(contract);
@@ -164,17 +134,6 @@ async function updateDotSol(root: string, config: any, filename: string): Promis
         writeIfChanged(join(outPath, outFile), ts);
     }
     return compiled;
-}
-
-// Leaves an up-to-date file alone; rewriting it would bump its mtime and make
-// the tsc watcher start a compile for output that did not change
-function writeIfChanged(path: string, content: string): void {
-    try {
-        if (fs.readFileSync(path).toString() === content) { return; }
-    } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ENOENT") { throw error; }
-    }
-    fs.writeFileSync(path, content);
 }
 
 function walk(root: string, path: string, callback: (fn: string) => void) {
